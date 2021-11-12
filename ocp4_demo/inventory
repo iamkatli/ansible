@@ -7,3 +7,13 @@ haproxy1 ansible_host=192.168.1.5
 [ocp_bastion_hosts]
 ocp1_bastion ansible_host=192.168.1.10
 ocp2_bastion ansible_host=192.168.1.11
+
+[windows]
+192.168.130.166
+
+[windows:vars]
+ansible_user=HPV\administrator
+ansible_connection=winrm
+ansible_winrm_transport=basic
+ansible_winrm_server_cert_validation=ignore
+ansible_port=5986
