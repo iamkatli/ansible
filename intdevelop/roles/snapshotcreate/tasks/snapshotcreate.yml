@@ -28,41 +28,41 @@
 #  tasks:
 ---
 - name: retrieve volume uuid by volume name
-    uri: 
-      url: "https://{{ netapp }}/api/storage/volumes?name={{ volume_name }}"
-      method: GET
-      return_content: yes
-      force_basic_auth: yes
-      validate_certs: no
-      timeout: 60
-      headers:
-          Authorization: "{{ authorization_key }}"
-          Accept: "application/json"
-    retries: 10
-    delay: 5
-    register: result
+  uri: 
+    url: "https://{{ netapp }}/api/storage/volumes?name={{ volume_name }}"
+    method: GET
+    return_content: yes
+    force_basic_auth: yes
+    validate_certs: no
+    timeout: 60
+    headers:
+        Authorization: "{{ authorization_key }}"
+        Accept: "application/json"
+  retries: 10
+  delay: 5
+  register: result
 #  - name: print return json dictionary
 #    debug:
 #      var: result.json.records[0].uuid
-  - name: retrieve volume uuid and store as variable
-    set_fact: 
-      volume_uuid={{ result.json.records[0].uuid }}
+- name: retrieve volume uuid and store as variable
+  set_fact: 
+    volume_uuid={{ result.json.records[0].uuid }}
 #  - name: print return json dictionary
 #    debug: msg="{{ volume_uuid }}"
-  - name: create snapshot with given volume uuid
-    uri: 
-      url: "https://{{ netapp }}/api/storage/volumes/{{ volume_uuid }}/snapshots"
-      method: POST
-      return_content: yes
-      force_basic_auth: yes
-      body_format: json
-      validate_certs: no
-      timeout: 60
-      status_code: 202
-      headers:
-          Authorization: "{{ authorization_key }}"
-          Accept: "application/json"
-      body:
-        name: "{{ snapshot_name }}"
-    retries: 10
-    delay: 5
+- name: create snapshot with given volume uuid
+  uri: 
+    url: "https://{{ netapp }}/api/storage/volumes/{{ volume_uuid }}/snapshots"
+    method: POST
+    return_content: yes
+    force_basic_auth: yes
+    body_format: json
+    validate_certs: no
+    timeout: 60
+    status_code: 202
+    headers:
+        Authorization: "{{ authorization_key }}"
+        Accept: "application/json"
+    body:
+      name: "{{ snapshot_name }}"
+  retries: 10
+  delay: 5
