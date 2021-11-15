@@ -1,0 +1,67 @@
+#
+# Create snapshot on Netapp storage with given volume & snaphot name
+# 
+# Author: Systex PS
+# Last updated: 12 Nov 2021
+# Version: 1.0
+#
+# Testing backgroup:
+#     - Netapp ontap: 9.8P6
+#     - OS Platform: Red Hat Enterprise Linux Server release 7.7 (Maipo)
+#     - Ansible Tower: 3.7.3
+#     - Ansible: 2.9.13
+#     - Python: 3.6.9-2 
+#
+# Example from Netapp: Create snapshot: snap.2021-06-17_035647
+# POST /api/storage/volumes/9f61e9b4-dc72-11e9-96ae-00a098d16cfd/snapshots { "name": "snap.2021-06-17_040305" }(0.087s)
+#
+
+- name: Create snapshot on Netapp ontap
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars: 
+    authorization_key: "Basic YWRtaW46UEBzc3cwcmQ="
+    volume_name: ktest_nfs1
+    snapshot_name: snapcopy1
+    netapp: 192.168.137.91
+  tasks:
+  - name: retrieve volume uuid by volume name
+    uri: 
+      url: "https://{{ netapp }}/api/storage/volumes?name={{ volume_name }}"
+      method: GET
+      return_content: yes
+      force_basic_auth: yes
+      validate_certs: no
+      timeout: 60
+      headers:
+          Authorization: "{{ authorization_key }}"
+          Accept: "application/json"
+    retries: 10
+    delay: 5
+    register: result
+#  - name: print return json dictionary
+#    debug:
+#      var: result.json.records[0].uuid
+  - name: retrieve volume uuid and store as variable
+    set_fact: 
+      volume_uuid={{ result.json.records[0].uuid }}
+#  - name: print return json dictionary
+#    debug: msg="{{ volume_uuid }}"
+  - name: create snapshot with given volume uuid
+    uri: 
+      url: "https://{{ netapp }}/api/storage/volumes/{{ volume_uuid }}/snapshots"
+      method: POST
+      return_content: yes
+      force_basic_auth: yes
+      body_format: json
+      validate_certs: no
+      timeout: 60
+      status_code: 202
+      headers:
+          Authorization: "{{ authorization_key }}"
+          Accept: "application/json"
+      body:
+        name: "{{ snapshot_name }}"
+    retries: 10
+    delay: 5

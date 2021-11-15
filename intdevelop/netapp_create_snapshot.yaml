@@ -1,0 +1,25 @@
+#
+# Create snapshot on Netapp storage with given volume & snaphot name
+# 
+# Author: Systex PS
+# Last updated: 12 Nov 2021
+# Version: 1.0
+#
+# Testing backgroup:
+#     - Netapp ontap: 9.8P6
+#     - OS Platform: Red Hat Enterprise Linux Server release 7.7 (Maipo)
+#     - Ansible Tower: 3.7.3
+#     - Ansible: 2.9.13
+#     - Python: 3.6.9-2 
+#
+---
+- name: Create snapshot on Netapp ontap
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars: 
+    volume_name: ktest_nfs1
+    snapshot_name: snapcopy1
+    netapp: 192.168.8.220
+  roles:
+    - snapshotcreate

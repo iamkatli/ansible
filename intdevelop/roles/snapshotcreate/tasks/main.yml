@@ -1,0 +1,4 @@
+---
+- include_tasks: snapshotcreate.yml
+  when: authorization_key is defined and authorization_key != ''
+
