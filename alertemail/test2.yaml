@@ -1,0 +1,16 @@
+---
+- name: 123
+  hosts: localhost
+  vars:
+    dirpath:
+    - /tmp
+    - /opt
+  tasks: 
+  - name: aaa
+    stat: 
+      path: "{{ item }}"
+    with_items: "{{ dirpath }}"
+    register: output
+  - debug: 
+      msg: "{{ item.stat.mtime|int }}"
+    with_items: "{{ output.results|list }}"

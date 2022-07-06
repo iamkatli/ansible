@@ -1,0 +1,99 @@
+---
+- name: Log scanning and send email alert
+  #hosts: SV81157
+  hosts: WAS
+  gather_facts: yes
+  #become: no
+  #become_method: sudo
+  #vars:
+    #instance: IHSMO
+    #instance: ITM
+    #type: HTTP
+    #applog_dir: /tmp/log
+    #applog_dir: /opt/IBM/WAS*/WebSphere/AppServer/profiles/AppSrv01/logs/*/
+  #vars_files:
+  #  - varfile.yaml
+  tasks:
+  - name: check input application path
+    fail: 
+      msg: "application path should be directory and end with \'/\'"
+    when: applog_dir[-1] != '/'
+  - name: get all subdirectory 
+    shell: ls -d {{ applog_dir }}
+    register: result_subdir
+  - debug: var=result_subdir
+  - name: get last updated files
+    find: 
+      path: "{{ item }}"
+      file_type: file
+      patterns: '*.log'
+#      excludes: 'SystemOut.log'
+      age: -1m
+    with_items: "{{ result_subdir.stdout_lines }}"
+    register: result_file
+# handle nested loop from find module......
+  - debug: var=result_file
+#  - debug: 
+# cannot print variable path
+#      msg: "{{ item.files | subelements('path', 'skip_missing=true') }}"
+# cannot print variable path
+#      msg: "{{ item.files | map(attribute='path') }}"
+# can print variable path, but item store its parent "files" not "path"
+#      msg: "{{ item.files | map(attribute='path') | unique | select | list }}"
+#    when: item.matched > 0
+#    with_items: "{{ result_file.results }}"
+
+# print variable path
+  - name: debug path
+    debug:
+      msg: "{{ item }}"
+    with_items: "{{ result_file.results | map(attribute='files') | sum(start=[]) | map(attribute='path') | list }}"
+  - name: generating searching file list
+    set_fact: 
+      target_file: "{{ result_file.results | map(attribute='files') | sum(start=[]) | map(attribute='path') | list }}"
+  - name: print list
+    debug: 
+      msg: "{{ item }}"
+    with_items: "{{ target_file }}"
+#  - name: print list
+#    debug: 
+#      msg: "{{ search_file.0 }}"
+  - name: finding keyword from log files
+#    shell: egrep -H -i '\s404\s|\s500\s|AccessManagementWSService' {{ item }}
+    shell: egrep -H -i '[^a-zA-Z0-9.:]404[^a-zA-Z0-9]|[^a-zA-Z0-9.:]500[^a-zA-Z0-9]|error' {{ item }}
+#    shell: egrep -H -i '404|500' {{ item }}
+    with_items: "{{ target_file }}"
+    register: result_msg
+    ignore_errors: true
+    when: ( target_file is defined ) or ( target_file|length > 0 )
+  - debug:
+      var=result_msg
+  - name: generate message 
+    set_fact:
+#      messages: "{{ result_msg.results | map(attribute='stdout_lines') | select | list }}"
+      messages: "{{ result_msg.results | map(attribute='stdout_lines') | select | list | flatten }}"
+  - name: debug messages
+    debug: var=messages
+  - name: check messages output
+    fail:
+      msg: "no result found"
+    when: ( messages is undefined ) or ( messages|length == 0 )
+  - debug: 
+      msg: "{{ messages|length }}"
+  - name: sending alert email
+    delegate_to: localhost
+    mail:
+      #host: SLF-ANTISPAM.CA.SUNLIFE
+      host: localhost
+      port: 25
+      from: ansadmin@{{ ansible_fqdn }}
+      #to: hk_middleware@sunlife.com
+      to: ansadmin@sv81805
+      subject: testing from ansible (WAS)
+#      body: |
+#        '{% for line in messages %}
+#         {{ line | to_json }}
+#         {% endfor %}'
+#      body: "{{ messages.split(',')|to_yaml }}"
+#      body: "{{ messages.split('\n')|to_yaml }}"
+      body: "{% for item in messages %}{{ item + '\n' }}{% endfor %}"

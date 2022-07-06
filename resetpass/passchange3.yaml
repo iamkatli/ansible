@@ -1,0 +1,23 @@
+---
+- name: Reset user password
+  hosts: SV81154
+  #hosts: localhost
+  gather_facts: no 
+#  become: yes
+#  become_method: sudo
+  vars_files:
+    - varfile.yaml
+  tasks:
+  - name: Change temporary user password
+#    shell: echo -e 'Hw,+593NZAQ!2w00' | sudo usermod -p $(openssl passwd -1 'WSD@4cgbdte5000') tssadmin
+    shell: echo -e {{ ansadminpassword }} | sudo -S -k /usr/sbin/usermod -p $(openssl passwd -1 {{ temppassword }}) tssadmin
+    register: result
+  - debug: 
+      msg: "{{ result }}"
+  - name: Change default user password
+#    shell: echo -e 'Hw,+593NZAQ!2w00' | sudo -S -k usermod -p $(openssl passwd -1 'ZAQ!2wsxcde3000') tssadmin
+    shell: echo -e {{ ansadminpassword }} | sudo -S -k /usr/sbin/usermod -p $(openssl passwd -1 {{ defaultpassword }}) tssadmin
+    register: result
+  - debug:
+      msg: "{{ result }}"
+

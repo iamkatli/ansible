@@ -1,0 +1,13 @@
+---
+- name: TEST
+  hosts: test
+  gather_facts: no 
+  vars_files:
+    - varfile.yaml
+  tasks:
+  - name: TEST
+    shell: 
+      cmd: ls -l /tmp
+    register: result
+  - debug:
+      msg: "{{ result }}"

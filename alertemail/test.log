@@ -1,0 +1,13 @@
+Hw,+593NZAQ!2w00
+
+Requirement 2
+
+1. Tail the logs for example /opt/IBM/IHSUITAT/HTTPServer/logs/error.log or /opt/IBM/IHSUAT/HTTPServer/logs/access.log
+2. If any 404 or 403 or "Error" in the log file
+3. Send email to Hk_Middleware@sunlife.com
+
+It should be customizable like for IHS the log folder is different, Websphere it is different, MFP, JBoss etc
+The playbook should have a option to pass as a argument either MFP, IHS, JBoss etc
+
+Let me login to tet server
+Yeah you can use this server as reference

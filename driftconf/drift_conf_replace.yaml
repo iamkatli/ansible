@@ -1,0 +1,32 @@
+---
+- name: resume APPS config file 
+  hosts: localhost
+  vars:
+    report_csv: '/home/ansadmin/Katelina_Playbooks_Redhat/driftconf/hk_drift_report_06072022.csv'
+  tasks:
+  - name: formating input data
+    shell: /bin/egrep '^[^,]+,[^,]+,IHS,[^,]+,[^,]+,[^,]+,[^,]+,FAIL,.*' {{ report_csv }}
+    register: result_output
+  - debug: var=result_output.stdout.split('\n')
+  #- name: formating input data
+  #  set_fact: 
+  #    #output: "{{ items | regex_search('(?P<dividend>[0-9]+)/(?P<divisor>[0-9]+)', '\\g<dividend>', '\\g<divisor>') }} 
+  #    output: "{{ items | regex_search('^([^,]+),[^,]+,IHS,([^,]+),([^,]+),[^,]+,[^,]+,FAIL,.*'), '\\1', '\\2', '\\3' }}"
+  - name: debug
+    debug:
+      #msg: "output: {{ item | regex_search('^([^,]+),[^,]+,IHS,([^,]+),([^,]+),[^,]+,[^,]+,FAIL,.*', '\\1', '\\2', '\\3') }}"
+      msg: "output: {{ item | regex_search('^([^,]+),[^,]+,IHS,[^,]+,([^,]+),[^,]+,[^,]+,FAIL,.*', '\\1', '\\2') }}"
+    with_items: "{{ result_output.stdout.split('\n') }}"
+# set_fact unique list
+  - name: generating target list
+    set_fact:
+      target_list: "{{ target_list | default([]) +  item | regex_search(_regex, '\\1', '\\2') | select | list }}"
+      #target_list: "{{ target_list | default([]) + [ item | regex_search(_regex, '\\1', '\\2')] }}"
+    vars:
+      _regex: '^([^,]+),[^,]+,IHS,[^,]+,([^,]+),[^,]+,[^,]+,FAIL,.*'
+    with_items: "{{ result_output.stdout.split('\n') }}"
+  - debug: var=target_list
+  - name: generating target list
+    set_fact:
+      target_list: "{{ target_list | unique | list }}"
+  - debug: var=target_list

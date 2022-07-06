@@ -1,0 +1,81 @@
+---
+- name: collect output file of checking script
+  hosts: MFP
+  #hosts: sv81155
+#  remote_user: fhkmfpuatadm
+#  vars:
+#    ansible_password: 'VFR$6yhn'
+#  vars_files: 
+#    - varfile.yaml
+#  remote_user: "{{ instance_user }}"
+  tasks:
+  - name: debug
+    debug:
+      msg: "{{ ansible_user }}"
+#  - name: get server instance
+#    set_fact:
+#      instance: "{{ ansible_user | regex_search('fhk(.+)adm', '\\1') | first }}"
+  - name: debug
+    debug: var=ansible_env.HOME
+  - name: get collect script
+    find: 
+      path: "{{ ansible_env.HOME }}"
+      file_type: file
+      patterns: '^collect_.*\_acc.sh$'
+      use_regex: yes
+    register: result_script
+  - debug: var=result_script
+  - name: matching script file
+    vars:
+      msg: |
+         Invalid matched scripts found:
+         (1) No script found
+         (2) More than one script found, please rename all unused script and try again
+    fail: 
+      msg: "{{ msg.split('\n') }}"
+    when: result_script.matched != 1
+  - debug: var=result_script.files.0.path
+  - debug: 
+      msg: "{{ result_script.files.0.path | basename }}"
+  - name: get instance name
+    set_fact: 
+      instance: "{{ result_script.files.0.path | basename | regex_search('^collect_(.+)_acc.sh$', '\\1') | first | string }}"
+  - debug: var=instance
+  - name: running checking script
+    shell: /bin/sh {{ result_script.files.0.path }}
+#    register: result
+  - name: debug
+    debug: var=ansible_fqdn 
+  - name: get output file
+    find: 
+      path: "{{ ansible_env.HOME }}"
+      file_type: file
+      pattern: "{{ ansible_hostname | lower }}_{{ instance }}_*.txt"
+      age: -3m
+    register: result_files
+  - name: validate script output
+    fail:
+      msg: "No file found, please ensure script output named as {{ ansible_hostname | lower }}_{{ instance }}_*.txt"
+    when: result_files.matched == 0
+  - debug: var=result_files
+#  - name: debug
+#    debug:
+#      msg: "{{ ansible_env.HOME }}/{{ ansible_hostname | lower }}_{{ instance }}_p1.txt"
+  # create date time directoroy
+  - debug: 
+      msg: "{{ item.path }}"
+    with_items: "{{ result_files.files }}" 
+  - name: download output file to local
+    fetch:
+      src: "{{ item.path }}"
+      dest: /Apps/reports/mfp/{{ ansible_date_time.year }}{{ ansible_date_time.month }}{{ ansible_date_time.day }}/
+      flat: yes
+    with_items: "{{ result_files.files }}"
+  #- name: get date time
+  #  shell: date +%d%b%y_%H-%M-%S
+  #  register: timestamp
+  #- name: Create folder
+  #shell: mkdir {{ timestamp.stdout }}
+  - name: create directory
+    debug:
+      msg: "{{ ansible_date_time.year }}{{ ansible_date_time.month }}{{ ansible_date_time.day }}"

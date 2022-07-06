@@ -1,0 +1,5 @@
+[MFP]
+sv81155-1 ansible_host=sv81155 ansible_user=fhkmfpuatadm ansible_password='VFR$6yhn'
+sv81155-2 ansible_host=sv81155 ansible_user=fhkmfpmoadm ansible_password='CDE#4rfv'
+
+[WAS]

@@ -1,0 +1,45 @@
+tssadmin:
+default:
+ZAQ!2wsxcde3000
+
+temp:
+WSD@4cgbdte5000
+
+ansadmin:
+Hw,+593NZAQ!2w00
+
+[ansadmin@sv81805 Katelina_Playbooks_Redhat]$ sudo chage -l tssadmin
+Last password change                                    : Apr 11, 2022
+Password expires                                        : Jul 10, 2022
+Password inactive                                       : never
+Account expires                                         : never
+Minimum number of days between password change          : 1
+Maximum number of days between password change          : 90
+Number of days of warning before password expires       : 7
+
+
+[ansadmin@sv81805 Katelina_Playbooks_Redhat]$ sudo chage -l tssadmin
+Last password change                                    : May 27, 2022
+Password expires                                        : Aug 25, 2022
+Password inactive                                       : never
+Account expires                                         : never
+Minimum number of days between password change          : 1
+Maximum number of days between password change          : 90
+Number of days of warning before password expires       : 7
+
+ansible-playbook passchange2.yaml --ask-become-pass  > input sudo password
+admin@sv81805 Katelina_Playbooks_Redhat]$ ansible-playbook passchange2.yaml --ask-become-pass
+BECOME password:
+
+PLAY [Reset user password] *********************************************************************************************************
+
+TASK [Change temporary user password] **********************************************************************************************
+changed: [localhost]
+
+TASK [Change default user password] ************************************************************************************************
+changed: [localhost]
+
+PLAY RECAP *************************************************************************************************************************
+localhost                  : ok=2    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+

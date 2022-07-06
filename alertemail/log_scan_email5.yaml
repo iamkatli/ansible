@@ -1,0 +1,103 @@
+---
+- name: Log scanning and send email alert
+  hosts: SV81154
+  #hosts: localhost
+  gather_facts: yes
+  #become: yes
+  #become_method: sudo
+  vars:
+    #instance: IHSMO
+    #instance: ITM
+    #type: HTTP
+    #applog_dir: /tmp/log
+    applog_dir: /opt/IBM/IHSMO/HTTPServer/logs
+    file_pattern:
+      - access
+      - error1
+    #keyword: '\\s404\\s'
+  #vars_files:
+  #  - varfile.yaml
+  tasks:
+  - name: application log path
+    stat:
+      path: "{{ applog_dir }}"
+    register: pstat
+  - name: inaccessible file directory
+    fail:
+      msg: "Inaccessible file directory"
+    when: pstat.stat.exists == false or pstat.stat.isdir == false or pstat.stat.readable == false
+#  - name: output
+#    debug:
+#      var: pstat
+
+  - name: Get access files
+    find:
+      path: "{{ applog_dir }}"
+      file_type: file
+      patterns: '.*{{ item }}.*\.log$'
+      use_regex: yes
+    with_items: "{{ file_pattern }}"
+    register: result_files
+
+  - name: Find latest file
+    debug:
+      var: result_files
+
+  - name: get latest file
+    set_fact:
+      target_file: "{{ target_file | default([]) + [(item.files | sort(attribute='mtime',reverse=true) | first).path | string] }}"
+    with_items: "{{ result_files.results }}"
+    when: item.matched != 0
+
+#  no_log: true
+#  loop_control:
+#    item.files one line, no use
+#    label: "{{ item.files }}"
+#    access_file: "{{ (item.files | sort(attribute='mtime',reverse=true) | first).path }}"
+#  with_items: "{{ result_files.results[0] }}"
+#  register: output
+#- name: debug loop
+#  debug:
+#    msg: "{{ output }}"
+#- name: display access file
+#  debug:
+#    var: access_file
+  - name: finding keyword from lastest log files
+    #shell: egrep -H -i '\s404\s' {{ item }} | tail -10
+    shell: egrep -m 50 -H -i '[^a-zA-Z0-9.:]404[^a-zA-Z0-9]' {{ item }}
+    with_items: "{{ target_file }}"
+    register: result_msg
+    ignore_errors: true
+#  loop_control:
+#    label: "{{ item }}"
+#- name: debug result msg
+#  debug:
+#    msg: "{{ result_msg }}"
+  - name: generating messages
+    set_fact:
+      messages: "{{ messages | default([]) + item.stdout_lines }}"
+    when: item.rc == 0
+    with_items: "{{ result_msg.results }}"
+    no_log: true
+  - name: check output messages
+    fail:  msg="No result found"
+    when: ( messages is undefined ) or ( messages|length == 0 )
+  - debug:
+      msg: "{% for item in messages %}{{ item + '\n' }}{% endfor %}"
+#- name: remote user
+#  set_fact:
+#    current_user: "{{ ansible_user_id }}"
+#- debug:
+#    var: current_user
+
+  - name: sending alert email
+    delegate_to: localhost
+    mail:
+      #host: SLF-ANTISPAM.CA.SUNLIFE
+      host: localhost
+      port: 25
+      from: ansadmin@{{ ansible_fqdn }}
+      #to: hk_middleware@sunlife.com
+      to: ansadmin@sv81805
+      subject: testing from ansible
+      body: "{% for item in messages %}{{ item + '\n' }}{% endfor %}"

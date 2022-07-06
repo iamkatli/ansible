@@ -1,0 +1,47 @@
+---
+- name: Log scanning and send email alert
+  hosts: WAS
+  gather_facts: yes
+  tasks:
+  - name: check input application path
+    fail: 
+      msg: "application path should be directory and end with \'/\'"
+    when: applog_dir[-1] != '/'
+  - name: get all subdirectory 
+    shell: ls -d {{ applog_dir }}
+    register: result_subdir
+  - name: get last updated files
+    find: 
+      path: "{{ item }}"
+      file_type: file
+      patterns: '*.log'
+      age: -30m
+    with_items: "{{ result_subdir.stdout_lines }}"
+    register: result_file
+  - name: generating searching file list
+    set_fact: 
+      target_file: "{{ result_file.results | map(attribute='files') | sum(start=[]) | map(attribute='path') | list }}"
+  - name: finding keyword from log files
+    shell: egrep -H -i '[^a-zA-Z0-9.:]404[^a-zA-Z0-9]|[^a-zA-Z0-9.:]500[^a-zA-Z0-9]|error' {{ item }} 
+    with_items: "{{ target_file }}"
+    register: result_msg
+    ignore_errors: true
+    when: ( target_file is defined ) or ( target_file|length > 0 )
+  - name: generate message 
+    set_fact:
+      messages: "{{ result_msg.results | map(attribute='stdout_lines') | select | list | flatten }}"
+  - name: check messages output
+    fail:
+      msg: "no result found"
+    when: ( messages is undefined ) or ( messages|length == 0 )
+  - name: sending alert email
+    delegate_to: localhost
+    mail:
+      #host: SLF-ANTISPAM.CA.SUNLIFE
+      host: localhost
+      port: 25
+      from: ansadmin@{{ ansible_fqdn }}
+      #to: hk_middleware@sunlife.com
+      to: ansadmin@sv81805
+      subject: testing from ansible (WAS)
+      body: "{% for item in messages %}{{ item + '\n' }}{% endfor %}"

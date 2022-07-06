@@ -1,0 +1,43 @@
+---
+- name: collect output file of checking script
+  hosts: sv81155
+  vars:
+    ansible_password: 'VFR$6yhn'
+  vars_files: 
+    - varfile.yaml
+  remote_user: "{{ instance_user }}"
+  tasks:
+  - name: debug
+    debug:
+      msg: "{{ ansible_user }}"
+  - name: get server instance
+    set_fact:
+      instance: "{{ ansible_user | regex_search('fhk(.+)adm', '\\1') | first }}"
+  - name: debug
+    debug: var=instance
+  - name: debug
+    debug: var=ansible_env.HOME
+  - name: running checking script
+    shell: /bin/sh {{ ansible_env.HOME }}/collect_{{ instance }}_acc.sh
+    register: result
+  - name: debug 
+    debug: 
+      msg: "{{ result }}"
+  - name: debug
+    debug: var=ansible_fqdn 
+  - name: debug
+    debug:
+      msg: "{{ ansible_env.HOME }}/{{ ansible_hostname | lower }}_{{ instance }}_p1.txt"
+  # create date time directoroy
+  - name: download output file to local host
+    fetch:
+      src: "{{ ansible_env.HOME }}/{{ ansible_hostname | lower }}_{{ instance }}_p1.txt"
+      dest: /tmp/abc/
+      flat: yes
+  #- name: get date time
+  #  shell: date +%d%b%y_%H-%M-%S
+  #  register: timestamp
+  #- name: Create folder
+  #shell: mkdir {{ timestamp.stdout }}
+  - debug:
+      msg: "{{ ansible_date_time.year }}{{ ansible_date_time.month }}{{ ansible_date_time.day }}"

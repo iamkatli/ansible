@@ -1,0 +1,49 @@
+---
+- name: Log scanning and send email alert
+  #hosts: SV81154
+  hosts: localhost
+  #gather_facts: yes
+  #become: no
+  #become_method: sudo
+  vars:
+    #instance: IHSMO
+    instance: ITM
+    filename: k08agent
+    basedir: /opt/IBM 
+    #subdir: HTTPServer/logs
+    subdir: logs
+  #vars_files:
+  #  - varfile.yaml
+  tasks:
+  - name: locate file path 
+    set_fact:
+      files_dir: "{% if subdir is defined and subdir %}{{ basedir }}/{{ instance }}/{{ subdir }}/{% else %}{{ basedir }}/{{ instance }}{% endif %}"
+  - name: show files_dir
+    debug: 
+      var: files_dir
+  - name: check file path
+    stat:
+      path: "{{ files_dir }}"
+    register: pstat
+  - name: inaccessible file directory
+    fail:
+      msg: "Inaccessible file directory"
+    when: pstat.stat.exists == false or pstat.stat.isdir == false or pstat.stat.readable == false
+  - name: Get access files
+    find:
+      path: "{{ files_dir }}"
+      file_type: file
+      patterns: '.*{{ filename }}.*\.log$'
+      use_regex: yes
+    register: result_files
+    failed_when: result_files.matched == 0
+  - name: Find latest file
+    debug:
+      var: result_files
+
+  - name: Find latest file
+    set_fact:
+      access_file: "{{ (result_files.files | sort(attribute='mtime',reverse=true) | first).path }}"
+  - name: Find latest file
+    debug:
+      msg: "{{ access_file }}"

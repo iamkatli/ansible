@@ -1,0 +1,20 @@
+---
+- name: Reset user password
+  hosts: SV81154
+  #hosts: localhost
+  gather_facts: no 
+  become: yes
+#  become_method: sudo
+  vars_files:
+    - varfile.yaml
+  tasks:
+  - name: Change temporary user password
+    user:
+      name: "{{ username }}"
+      update_password: always
+      password: "{{ temppassword|password_hash('sha512')}}"
+#  - name: Change default user password
+#    user:
+#      name: "{{ username }}"
+#      update_password: always
+#      password: "{{ defaultpassword|password_hash('sha512')}}"

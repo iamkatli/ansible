@@ -1,0 +1,8 @@
+[IHS]
+SV81154 applog_dir=/opt/IBM/IHSMO/HTTPServer/logs 
+
+[WAS]
+SV81157 applog_dir=/opt/IBM/WAS*/WebSphere/AppServer/profiles/AppSrv01/logs/*/
+
+[IHS:vars]
+file_pattern=['access', 'error']

@@ -1,0 +1,3 @@
+instance_user: fhkmfpuatadm
+check_script: collect_mfpuat_acc.sh
+output_file: sv81155_mfpuat_p1.txt

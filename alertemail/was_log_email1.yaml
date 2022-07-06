@@ -1,0 +1,60 @@
+---
+- name: Log scanning and send email alert
+  hosts: SV81157
+  #hosts: localhost
+  gather_facts: yes
+  become: no
+  #become_method: sudo
+  vars:
+    #instance: IHSMO
+    #instance: ITM
+    #type: HTTP
+    #applog_dir: /tmp/log
+    applog_dir: /opt/IBM/WAS*/WebSphere/AppServer/profiles/AppSrv01/logs/*/*.log
+  #vars_files:
+  #  - varfile.yaml
+  tasks:
+  - name: read application directory
+    shell: ls -t1 {{ applog_dir }}
+    register: result_log
+  - name: debug application dir
+    debug: 
+      msg: "{{ result_log.stdout_lines }}"
+#      msg: "{{ result_log.stdout_lines | map(attribute='path') | list }}"
+#      msg: "{{ item | dirname }}"
+    with_items: "{{ result_log.stdout_lines }}"
+  - name: check file status
+    stat:
+      path: "{{ item }}"
+    with_items: "{{ result_log.stdout_lines }}"
+    register: result_file_stat
+#  - name: debug check file status
+#    debug:
+#      msg: "{{ item.stat }}"
+#    with_items: "{{ result_file_stat.results }}"
+  - name: output
+    debug:
+      msg: "{{ item.stat.mtime }}"
+    when: ( ansible_date_time.epoch|int - item.stat.mtime|int ) < ( 1 * 60 )
+    loop_control:
+      label: "{{ item.stat.mtime }}"
+    with_items: "{{ result_file_stat.results }}"
+  - name: set latest file list
+    set_fact: 
+      file_list: "{{ file_list | default([]) + item.stat.path.split('\n') | select | list}}"
+    when: ( ansible_date_time.epoch|float - item.stat.mtime|float ) < ( 2 * 60 )
+    with_items: "{{ result_file_stat.results }}"
+  - name: debug file status
+    debug: var=file_list
+#  - name: get latest log path
+#    find: 
+#      path: "{{ item | dirname }}"
+#      file_type: file
+#      patterns: '*.log'
+#      age: 1d
+#    with_items: "{{ result_log.stdout_lines }}"
+#    register: result_file
+#  - name: debug log file
+#    debug: 
+#      msg: "{{ result_file }}"
+

@@ -1,0 +1,6 @@
+---
+# vars file for roles
+file_pattern:
+  - access
+  - error1
+keyword: '\\s404\\s'

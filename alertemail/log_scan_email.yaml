@@ -1,0 +1,30 @@
+---
+- name: Log scanning and send email alert
+  hosts: localhost
+  gather_facts: yes
+  become: no
+  #become_method: sudo
+  vars:
+    instance: IHSMO 
+  #vars_files:
+  #  - varfile.yaml
+  tasks:
+  - name: Finding error message in log files
+  #  shell: grep -m 5 -i 404 /opt/IBM/{{ instance }}/HTTPServer/logs/*.log
+    shell: grep -m 5 -i info /var/log/vmware-install.log
+    register: result
+    failed_when: "result.rc != 0"
+  - name: result
+    debug: 
+      msg: "{{ result.stdout_lines }}" 
+    when: "result.rc == 0"
+  - name: sending alert email
+    delegate_to: localhost
+    mail:
+      host: localhost
+      port: 25
+      from: root@sv81805.hk.sunlife
+#      to: ansadmin@sv81805.hk.sunlife
+      to: hk_middleware@sunlife.com
+      subject: testing from ansible
+      body: "{{ result.stdout_lines }}"

@@ -1,0 +1,29 @@
+---
+- name: Log scanning and send email alert
+  hosts: SV81154
+  #hosts: localhost
+  gather_facts: yes
+  become: no
+  #become_method: sudo
+  vars:
+    #instance: IHSMO
+    #instance: ITM
+    type: HTTP
+    #applog_dir: /tmp/log
+    applog_dir: /opt/IBM/IHSMO/HTTPServer/logs
+  #vars_files:
+  #  - varfile.yaml
+  pre_tasks:
+  - name: application log path
+    stat:
+      path: "{{ applog_dir }}"
+    register: pstat
+  - name: inaccessible file directory
+    fail:
+      msg: "Inaccessible file directory"
+    when: pstat.stat.exists == false or pstat.stat.isdir == false or pstat.stat.readable == false
+#  - name: output
+#    debug:
+#      var: pstat
+  roles:
+    - { role: httpserver, when type == 'HTTP' }
